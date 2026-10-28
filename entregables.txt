@@ -8,26 +8,7 @@ Lenguaje: Java
 Proyecto: BST_Clientes
 
 --------------------------------------------------------------------------------
-0. REFLEXION PREVIA (SECCION 4 DEL ENUNCIADO)
---------------------------------------------------------------------------------
-1. Error en 'setLeft' y 'setRight' de Node (this.left = left):
-   Al asignarse el atributo a si mismo en lugar de usar el parametro recibido,
-   los punteros de cada nodo permanecian en 'null'. Con esto, ningun nodo hijo
-   se enlazaba al arbol y la estructura nunca podia crecer mas alla de la raiz.
-
-2. Ausencia de 'getValue()' y del constructor 'Node(int key, E value)':
-   Sin estos miembros, el nodo solo podia almacenar una clave numerica aislada,
-   impidiendo asociar y recuperar la instancia del objeto 'Cliente' correspondiente
-   a cada nodo del arbol.
-
-3. Falta de 'root = insertRecursive(...)' en 'insertNode':
-   En Java el paso de parametros es por valor. Cuando 'root' es inicialmente null,
-   'insertRecursive' crea el nuevo nodo y lo retorna, pero si 'insertNode' no asigna
-   dicho retorno a 'this.root', la raiz permanece en null permanentemente.
-
-
---------------------------------------------------------------------------------
-PARTE B: TABLA DE ELECCION DE RECORRIDO DILIGENCIADA
+TABLA DE ELECCION DE RECORRIDO DILIGENCIADA
 --------------------------------------------------------------------------------
 
 +---------------+--------------------+---------------------------------------+-----------------------------+
