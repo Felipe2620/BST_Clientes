@@ -1,0 +1,167 @@
+================================================================================
+ESTRUCTURAS DE DATOS 2026B - UNIVERSIDAD SANTIAGO DE CALI
+EJERCICIO PRACTICO: ARBOLES BINARIOS DE BUSQUEDA (BST) - BASE DE CLIENTES
+================================================================================
+
+Estudiante / Autor: Felipe Jurado
+Lenguaje: Java
+Proyecto: BST_Clientes
+
+--------------------------------------------------------------------------------
+0. REFLEXION PREVIA (SECCION 4 DEL ENUNCIADO)
+--------------------------------------------------------------------------------
+1. Error en 'setLeft' y 'setRight' de Node (this.left = left):
+   Al asignarse el atributo a si mismo en lugar de usar el parametro recibido,
+   los punteros de cada nodo permanecian en 'null'. Con esto, ningun nodo hijo
+   se enlazaba al arbol y la estructura nunca podia crecer mas alla de la raiz.
+
+2. Ausencia de 'getValue()' y del constructor 'Node(int key, E value)':
+   Sin estos miembros, el nodo solo podia almacenar una clave numerica aislada,
+   impidiendo asociar y recuperar la instancia del objeto 'Cliente' correspondiente
+   a cada nodo del arbol.
+
+3. Falta de 'root = insertRecursive(...)' en 'insertNode':
+   En Java el paso de parametros es por valor. Cuando 'root' es inicialmente null,
+   'insertRecursive' crea el nuevo nodo y lo retorna, pero si 'insertNode' no asigna
+   dicho retorno a 'this.root', la raiz permanece en null permanentemente.
+
+
+--------------------------------------------------------------------------------
+PARTE B: TABLA DE ELECCION DE RECORRIDO DILIGENCIADA
+--------------------------------------------------------------------------------
+
++---------------+--------------------+---------------------------------------+-----------------------------+
+| Requerimiento | Recorrido elegido  | Justificacion                         | Poda o detencion temprana?  |
++---------------+--------------------+---------------------------------------+-----------------------------+
+| R1: Listado   | In-Orden           | La propiedad del BST establece que    | NO SE PODA.                 |
+| de todos los  | (Izquierda ->      | las claves del subarbol izquierdo son | Es necesario visitar todos  |
+| clientes de   |  Raiz ->           | menores y las del derecho mayores o   | los n nodos del arbol ya    |
+| menor a mayor |  Derecha)          | iguales. Al visitar en orden simetrico| que el requerimiento pide   |
+| compra.       |                    | se obtienen los clientes ordenados en | listar a todos los clientes |
+|               |                    | forma ascendente en tiempo O(n).      | registrados.                |
++---------------+--------------------+---------------------------------------+-----------------------------+
+| R2: Los 3     | In-Orden Inverso   | Visita primero el subarbol derecho,   | SI SE DETIENE ANTES.        |
+| clientes con  | (Derecha ->        | luego la raiz y despues el subarbol   | Se corta la recursion en el |
+| mayor total   |  Raiz ->           | izquierdo, extrayendo las claves de   | momento exacto en que la    |
+| de compras.   |  Izquierda)        | mayor a menor sin necesidad de        | lista reune los n elementos |
+|               |                    | ordenar toda la coleccion ni invertir | (lista.size() == 3).        |
++---------------+--------------------+---------------------------------------+-----------------------------+
+| R3: Clientes  | In-Orden con       | Permite recuperar los clientes dentro | SI SE PODA.                 |
+| entre 25 y 35 | poda por rango     | del intervalo [25, 35] ordenados.     | - Si clave <= min, no baja  |
+| anos          |                    | Se aprovecha el orden del BST para    |   al subarbol izquierdo.    |
+| (inclusive).  |                    | omitir ramas enteras que esten fuera  | - Si clave > max, no baja   |
+|               |                    | de los limites del rango solicitado.  |   al subarbol derecho.      |
++---------------+--------------------+---------------------------------------+-----------------------------+
+| R5: Cliente   | Descenso directo   | Por definicion del BST, la clave      | SI SE PODA COMPLETAMENTE.   |
+| mas joven y   | unidireccional por | minima reside en el nodo mas a la     | Se descarta un subarbol en  |
+| cliente de    | rama extrema       | izquierda y la clave maxima en el nodo| cada paso. Solo se desciende|
+| mayor edad.   |                    | mas a la derecha. No se requiere      | por un unico camino desde   |
+|               |                    | recorrer arboles completos.           | la raiz con costo O(h).     |
++---------------+--------------------+---------------------------------------+-----------------------------+
+
+
+--------------------------------------------------------------------------------
+PARTE C: CLAVES DUPLICADAS (R6)
+--------------------------------------------------------------------------------
+
+1. Clientes perdidos en el codigo base:
+   - Se registraron 9 clientes de prueba en el arreglo inicial.
+   - En 'arbolCompras' se almacenaron 9 nodos (todos tienen compras distintas).
+   - En 'arbolEdad' se almacenaron unicamente 7 nodos.
+   - Se perdieron 2 clientes:
+     * Camilo Velez (28 anos), cuya edad coincide con la de Luis Prado.
+     * Paola Gil (34 anos), cuya edad coincide con la de Ana Torres.
+   - Causa: 'insertRecursive' solo contenia ramas para clave menor (<) y clave
+     mayor (>). Al presentarse una clave igual (==), ninguna condicion se cumplia
+     y el metodo retornaba 'rootNode' sin realizar la insercion ni guardar el nodo.
+
+2. Modificacion de 'insertRecursive':
+   Se cambio la condicion:
+       else if (nodeToInsert.getKey() > rootNode.getKey())
+   por:
+       else
+   haciendo que toda clave mayor o igual (>=) se desvie hacia la rama derecha.
+   Con este cambio, ambos arboles registran 9 nodos completos y no se pierde ningun
+   cliente.
+
+3. Verificacion de 'getKeyList' y 'clientesEnRango':
+   - 'getKeyList()': Al usar recorrido In-Orden (Izquierda -> Raiz -> Derecha),
+     visita primero el nodo original y luego los nodos duplicados en su subarbol
+     derecho, manteniendo la lista en orden no decreciente:
+     [23, 28, 28, 31, 34, 34, 39, 45, 52].
+   - 'clientesEnRango(min, max)': Para preservar la consistencia con los duplicados
+     almacenados a la derecha, la condicion de descenso al subarbol derecho se ajusto
+     a 'current.getKey() <= max' (en lugar de '< max'). Esto asegura que si una clave
+     es exactamente igual al limite maximo (p. ej. 35 o 34), sus duplicados en la rama
+     derecha sean explorados. Para el rango [25, 35] se retornan los 5 clientes:
+     Luis Prado (28), Camilo Velez (28), Julian Ortiz (31), Ana Torres (34) y Paola Gil (34).
+
+4. Comportamiento de 'buscarNodo' con duplicados y propuestas de solucion:
+   - Que ocurre actualmente: 'buscarNodo' se detiene en la primera coincidencia que
+     encuentra (if (rootNode.getKey() == key) return rootNode;). Por ende, siempre
+     retorna el PRIMER cliente insertado con dicha clave (el mas cercano a la raiz).
+   - Alternativas para recuperar todos los clientes con la misma clave:
+     * Alternativa 1 (Busqueda exhaustiva en rama derecha): Implementar un metodo
+       'buscarTodos(int key, Node rootNode, ArrayList<Cliente> list)' que al hallar
+       una coincidencia agregue el cliente y continue buscando recursivamente en el
+       subarbol derecho ('rootNode.getRight()').
+     * Alternativa 2 (Lista interna en el nodo): Modificar la clase Node para que en
+       lugar de un unico valor 'E value' contenga una coleccion 'ArrayList<E> values'.
+       Si se inserta una clave existente, se anade el cliente a la lista del mismo
+       nodo, evitando elevar innecesariamente la altura del arbol.
+
+
+--------------------------------------------------------------------------------
+PARTE D: FORMA DEL ARBOL Y COMPLEJIDAD
+--------------------------------------------------------------------------------
+
+1. Implementacion de 'altura':
+   Calculada recursivamente con la convencion: arbol vacio = -1, hoja = 0.
+   altura(node) = 1 + max(altura(node.left), altura(node.right)).
+
+2. Formas del arbol segun orden de insercion:
+
+   Caso A: Insercion en orden [10, 20, 30, 40, 50, 60]
+   - Altura obtenida: 5 (h = n - 1 = 6 - 1 = 5)
+   - Forma: Arbol completamente degenerado (sesgado a la derecha), equivalente
+     a una lista enlazada simple.
+     Diagrama:
+       10
+         \
+          20
+            \
+             30
+               \
+                40
+                  \
+                   50
+                     \
+                      60
+
+   Caso B: Insercion en orden [40, 20, 60, 10, 30, 50]
+   - Altura obtenida: 2 (h = floor(log2(6)) = 2)
+   - Forma: Arbol balanceado, los nodos se reparten equitativamente a ambos lados.
+     Diagrama:
+             40
+            /  \
+          20    60
+         /  \   /
+       10   30 50
+
+3. Analisis de complejidad:
+   - Complejidad en el Caso A (degenerado): O(n) en el peor caso. Al estar los
+     nodos en una sola rama, la busqueda de un elemento inexistente o del ultimo (60)
+     obliga a recorrer los n nodos secuencialmente.
+   - Complejidad en el Caso B (balanceado): O(log n) en el caso promedio / optimo.
+     En cada paso se descarta aproximadamente la mitad de los elementos restantes.
+
+4. Como evitar el peor caso y estructuras de datos de solucion:
+   - Para evitar el peor caso, los datos de entrada no deben suministrarse ordenados
+     previamente; deben barajarse aleatoriamente o insertarse partiendo recursivamente
+     de la mediana.
+   - Para garantizar siempre un desempeno optimo sin importar el orden de los datos,
+     se emplean Arboles Binarios de Busqueda Autobalanceados, tales como los
+     Arboles AVL o los Arboles Rojo-Negro (Red-Black Trees), los cuales ejecutan
+     rotaciones locales O(1) tras inserciones y eliminaciones para asegurar que
+     la altura del arbol se mantenga estrictamente en O(log n).
+================================================================================
